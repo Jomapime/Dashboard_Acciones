@@ -1,7 +1,8 @@
 #    http://shiny.rstudio.com/
 #
 
-pacman::p_load(shiny,readr,rsconnect,dplyr,highcharter,shinythemes,shinydashboard,quantmod,
+pacman::p_load(shiny,readr,rsconnect,dplyr,highcharter,shinythemes,
+               shinydashboard,quantmod,
                data.table,shinyjs, shinyWidgets)
 
 #getSymbols(c("AAPL","TSLA","PYPL","NVDA",
@@ -121,7 +122,7 @@ getSymbols("DTP30F40",src="FRED",periodicity="daily")
 TES <- as.data.frame(DTP30F40)
 setDT(TES,keep.rownames = T)
 TES$rn <- as.Date(TES$rn, format= "%Y-%m-%d") 
-TES <- subset(TES, rn > "2016-12-30")
+TES <- subset(TES, rn > "2018-12-31")
 
 
 
@@ -144,11 +145,13 @@ ui <- dashboardPage(
       style = "position: relative; overflow: visible;",
       menuItem("Indice S&P 500", tabName = "Resultados", icon = icon("stats", lib = "glyphicon")),
       
-      menuItem("Acciones", tabName = 'Stocks', icon = icon("chart-line", lib = "font-awesome"))
+      menuItem("Acciones", tabName = 'Stocks', icon = icon("chart-line", lib = "font-awesome")),
+      menuItem("Portafolio",tabName = 'P_Optimo', icon = icon("chart-pie", lib = "font-awesome"))
     )
   ),
   dashboardBody(
     tabItems(
+      
       tabItem(tabName = "Resultados",
               h1("Dashboard rendimiento SP500"),
               br(), br(),
@@ -175,36 +178,102 @@ ui <- dashboardPage(
               highchartOutput("Graf_SP500", height = 800),
               br(),
               h2("Se Acabo :v")),
+      
+      
       tabItem(tabName = "Stocks",
               h1("Seguimiento de acciones"),
               br(),
+              
               fluidRow(
                 box(width=3,selectizeInput("S_Acciones", 
                                            "Seleccione las acciones que quiere analizar.",
                                            choices = L_Acciones,
-                                           selected =NULL, width = "200px", multiple = F
-                ),br(),
-                dateRangeInput("F_Acciones", "Seleccione el rango de fechas",start = NULL,end = NULL,
-                               min = "2017-01-01", format = "yyyy-mm-dd", width = "200px"),
-                actionButton("go", "Hacer grafico"),),
+                                           selected =NULL, width = "200px", 
+                                           multiple = F),
+                    br(),
+                    dateRangeInput("F_Acciones", "Seleccione el rango de fechas",
+                                   start = NULL,end = NULL,
+                                   min = "2017-01-01", format = "yyyy-mm-dd",
+                                   width = "200px"),
+                    actionButton("go", "Hacer grafico")),
                 
-                box(width = 8,plotOutput("Grafico"), height = 300)
+                box(width = 8,plotOutput("Grafico"))
               ),
+              
               br(),br(),
               
               fluidRow(
-                box(width=3,selectizeInput("porta", 
-                                           "Seleccione las acciones para conformar su portafolio",
+                box(width=3,selectizeInput("S_Acciones1", 
+                                           "Seleccione las acciones que quiere analizar.",
                                            choices = L_Acciones,
-                                           selected =NULL, width = "200px", multiple = T, 
-                                           options = list(maxItems = 4))),
+                                           selected =NULL, width = "200px", 
+                                           multiple = F),
+                    br(),
+                    dateRangeInput("F_Acciones1", "Seleccione el rango de fechas",
+                                   start = NULL,end = NULL,
+                                   min = "2017-01-01", format = "yyyy-mm-dd",
+                                   width = "200px"),
+                    actionButton("go1", "Hacer grafico")),
                 
-                box(width = 8,textOutput("result"), height = 300)
+                box(width = 8,plotOutput("Grafico1"))
               ),
               
-              ### PONER ALGUN OBSERVEVENT PARA ACTUALIZAR LA LISTA Y OMITIR LA ACCION YA SELECCIONADA
-              #  chartSeries(CEMEXCPO.MX, theme="white",TA="addVo();addBBands();addCCI()")
-      )
+              br(),br(),
+              
+              fluidRow(
+                box(width=3,selectizeInput("S_Acciones2", 
+                                           "Seleccione las acciones que quiere analizar.",
+                                           choices = L_Acciones,
+                                           selected =NULL, width = "200px", 
+                                           multiple = F),
+                    br(),
+                    dateRangeInput("F_Acciones2", "Seleccione el rango de fechas",
+                                   start = NULL,end = NULL,
+                                   min = "2017-01-01", format = "yyyy-mm-dd",
+                                   width = "200px"),
+                    actionButton("go2", "Hacer grafico")),
+                
+                box(width = 8,highchartOutput("Grafico2"))
+              )),
+      
+      tabItem(tabName = "P_Optimo",
+              h1("CREACION DE PORTAFOLIO OPTIMO"),
+              br(),
+              fluidRow(column(2,selectInput("PO_A1",
+                                          "Primera accion",
+                                          choices = L_Acciones,
+                                          selected = "NFLX",width = "200px",
+                                          multiple = F)),
+                       column(2,selectInput("PO_A2",
+                                          "Segunda accion",
+                                          choices = L_Acciones,
+                                          selected = "UBER",width = "200px",
+                                          multiple = F)),
+                       column(2,selectInput("PO_A3",
+                                          "Tercera accion",
+                                          choices = L_Acciones,
+                                          selected = "KO",width = "200px",
+                                          multiple = F)),
+                       column(2,selectInput("PO_A4",
+                                          "Cuarta accion",
+                                          choices = L_Acciones,
+                                          selected = "TWTR",width = "200px",
+                                          multiple = F)),
+                       column(2,selectInput("PO_A5",
+                                            "Quinta accion",
+                                            choices = L_Acciones,
+                                            selected = "MSFT",width = "200px",
+                                            multiple = F)),
+                       column(2,selectInput("PO_A6",
+                                            "Sexta accion",
+                                            choices = L_Acciones,
+                                            selected = "FB",width = "200px",
+                                            multiple = F))),
+              br(),
+              dataTableOutput("Tablaa"))
+      
+      
+      
     )
   )
 )
@@ -259,20 +328,20 @@ server <- function(input, output) {
     PBD_box
   })
   
-    ## GRAFICO INTERACTIVO SP500
+  ## GRAFICO INTERACTIVO SP500
   
   output$Graf_SP500 <- renderHighchart({
     
     if(input$RSI == TRUE){
-    
-    highchart(type = "stock") %>% 
-      hc_yAxis_multiples(create_yaxis(2, height = c(2,1), turnopposite = T)) %>% 
-      hc_add_series(Adj_SP, yAxis = 0, name = "Adj_SP") %>% 
-      hc_add_series(Adj_SP.SMA.20, yAxis = 0, name = "Media de 20") %>% 
-      hc_add_series(Adj_SP.SMA.200, yAxis = 0, name = "Media de 200") %>% 
-      hc_add_series(Adj_SP.RSI.14, yAxis = 1, name = "Osciallator", color = hex_to_rgba("green", 0.7)) %>%
-      hc_add_series(Adj_SP.RSI.SellLevel, color = hex_to_rgba("red", 0.7), yAxis = 1, name = "Zona de venta") %>% 
-      hc_add_series(Adj_SP.RSI.BuyLevel, color = hex_to_rgba("blue", 0.7), yAxis = 1, name = "Zona de compra")
+      
+      highchart(type = "stock") %>% 
+        hc_yAxis_multiples(create_yaxis(2, height = c(2,1), turnopposite = T)) %>% 
+        hc_add_series(Adj_SP, yAxis = 0, name = "Adj_SP") %>% 
+        hc_add_series(Adj_SP.SMA.20, yAxis = 0, name = "Media de 20") %>% 
+        hc_add_series(Adj_SP.SMA.200, yAxis = 0, name = "Media de 200") %>% 
+        hc_add_series(Adj_SP.RSI.14, yAxis = 1, name = "Osciallator", color = hex_to_rgba("green", 0.7)) %>%
+        hc_add_series(Adj_SP.RSI.SellLevel, color = hex_to_rgba("red", 0.7), yAxis = 1, name = "Zona de venta") %>% 
+        hc_add_series(Adj_SP.RSI.BuyLevel, color = hex_to_rgba("blue", 0.7), yAxis = 1, name = "Zona de compra")
     }
     
     else if (input$RSI == FALSE){
@@ -281,8 +350,8 @@ server <- function(input, output) {
         hc_add_series(Adj_SP, yAxis = 0, name = "Adj_SP") %>% 
         hc_add_series(Adj_SP.SMA.20, yAxis = 0, name = "Media de 20") %>% 
         hc_add_series(Adj_SP.SMA.200, yAxis = 0, name = "Media de 200") 
-#        hc_title(text = "GRAFICO INTERACTIVO COMPORTAMIENTO S&P 500",
-#                 align = "center", style = list(color = "black", fontWeight = "bold", fontSize = "22px"))
+      #        hc_title(text = "GRAFICO INTERACTIVO COMPORTAMIENTO S&P 500",
+      #                 align = "center", style = list(color = "black", fontWeight = "bold", fontSize = "22px"))
       
       
     }
@@ -292,6 +361,9 @@ server <- function(input, output) {
   
   
   ## ACTUALIZACION GRAFICOS SEGUNDO MENU
+  
+  
+  ### PRIMER GRAFICO
   
   Descarga_A <- reactive({
     getSymbols(input$S_Acciones, src = "yahoo",
@@ -309,11 +381,112 @@ server <- function(input, output) {
     chartSeries(Boton())
   })
   
-  output$result <- renderText({
-    input$porta
-  })
- 
   
+  ### SEGUNDO GRAFICO
+  
+  Descarga_A1 <- reactive({
+    getSymbols(input$S_Acciones1, src = "yahoo",
+               from = input$F_Acciones1[1],
+               to = input$F_Acciones1[2],
+               auto.assign = FALSE)
+  })
+  
+  
+  Boton1 <- eventReactive(input$go1, {
+    Descarga_A1()
+  })
+  
+  output$Grafico1 <- renderPlot({
+    chartSeries(Boton1(),theme="white",TA="addVo();addBBands()")
+  })
+  
+  
+  ### TERCER GRAFICO
+  
+  Descarga_A2 <- reactive({
+    getSymbols(input$S_Acciones2, src = "yahoo",
+               from = input$F_Acciones2[1],
+               to = input$F_Acciones2[2],
+               auto.assign = FALSE)
+  })
+  
+  
+  Boton2 <- eventReactive(input$go2, {
+    Descarga_A2()
+  })
+  
+  output$Grafico2 <- renderHighchart({
+    hchart(Boton2())%>% hc_add_theme(hc_theme_google())
+  })
+  
+  
+  
+  
+  ## CREACION DEL PORTAFOLIO OPTIMO
+  
+  ### PRIMERA
+  
+  Funcion_P1 <- reactive({
+    getSymbols(input$PO_A1, src = "yahoo",
+               from = "2019-01-01", periodicity="daily",
+               auto.assign = FALSE)
+  })
+  
+  Funcion_P2 <- reactive({
+    getSymbols(input$PO_A2, src = "yahoo",
+               from = "2019-01-01", periodicity="daily",
+               auto.assign = FALSE)
+
+  })
+  
+  Funcion_P3 <- reactive({
+    getSymbols(input$PO_A3, src = "yahoo",
+               from = "2019-01-01", periodicity="daily",
+               auto.assign = FALSE)
+
+  })
+  
+  
+  Funcion_P4 <- reactive({
+    getSymbols(input$PO_A4, src = "yahoo",
+               from = "2019-01-01", periodicity="daily",
+               auto.assign = FALSE)
+
+  })
+  
+  
+  Funcion_P5 <- reactive({
+    getSymbols(input$PO_A5, src = "yahoo",
+               from = "2019-01-01", periodicity="daily",
+               auto.assign = FALSE)
+  })
+  
+  
+  Funcion_P6 <- reactive({
+    getSymbols(input$PO_A6, src = "yahoo",
+               from = "2019-01-01", periodicity="daily",
+               auto.assign = FALSE)
+  })
+  
+  base_datos <- reactive({
+    Accion1 <- Arreglos(Funcion_P1)
+    Accion2 <- Arreglos(Funcion_P2)
+    Accion3 <- Arreglos(Funcion_P3)
+    Accion4 <- Arreglos(Funcion_P4)
+    Accion5 <- Arreglos(Funcion_P5)
+    Accion6 <- Arreglos(Funcion_P6)
+    #CAPM<- Reduce(function(x, y) merge(x, y, all=TRUE), list(Accion1,Accion2,Accion3,Accion4,Accion5,Accion6,TES))
+    #CAPM
+    print(Accion1)
+  })
+  
+  output$Tablaa <- renderDataTable({
+    
+    #https://stackoverflow.com/questions/14096814/merging-a-lot-of-data-frames
+    Accion1 <- Arreglos(Funcion_P1)
+    print(Accion1)
+  
+    })
   
 }
 
