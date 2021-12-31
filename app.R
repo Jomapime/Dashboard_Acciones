@@ -116,18 +116,12 @@ PBD_box <-  valueBox(
 
 
 
-
-
-
-
 getSymbols("DTP30F40",src="FRED",periodicity="daily")
 
 TES <- as.data.frame(DTP30F40)
 setDT(TES,keep.rownames = T)
 TES$rn <- as.Date(TES$rn, format= "%Y-%m-%d") 
 TES <- subset(TES, rn > "2016-12-30")
-
-
 
 
 
@@ -195,6 +189,17 @@ ui <- dashboardPage(
                 actionButton("go", "Hacer grafico"),),
                 
                 box(width = 8,plotOutput("Grafico"), height = 300)
+              ),
+              br(),br(),
+              
+              fluidRow(
+                box(width=3,selectizeInput("porta", 
+                                           "Seleccione las acciones para conformar su portafolio",
+                                           choices = L_Acciones,
+                                           selected =NULL, width = "200px", multiple = T, 
+                                           options = list(maxItems = 4))),
+                
+                box(width = 8,textOutput("result"), height = 300)
               ),
               
               ### PONER ALGUN OBSERVEVENT PARA ACTUALIZAR LA LISTA Y OMITIR LA ACCION YA SELECCIONADA
@@ -303,67 +308,13 @@ server <- function(input, output) {
   output$Grafico <- renderPlot({
     chartSeries(Boton())
   })
+  
+  output$result <- renderText({
+    input$porta
+  })
  
   
-  ### TERCER MENU, PORTAFOLIO OPTIMO
   
-  output$frontera <- renderPlot({
-    
-    
-    
-    BCO<-ts(`BANCOLOMBIA`,frequency = 252, start=c(2007,11,27))
-    ISA<-ts(`ISA`, frequency = 252, start=c(2007,11,27))
-    ECO<-ts(`ECOPETROL`, frequency = 252, start=c(2007,11,27))
-    ICOLCAP<-ts(`COLCAP`, frequency = 252, start=c(2007,11,27))
-    
-    R_bco<-diff(log(BCO))
-    R_isa<-diff(log(ISA))
-    R_eco<-diff(log(ECO))
-    Rm<-diff(log(ICOLCAP))
-    Rf<-(1+TES/100)^(1/252)-1
-    Rf<-Rf[!is.na(Rf)]
-    
-    
-    
-    
-    rendimiento<-c(mean(Rm), mean(R_bco), mean(R_isa), mean(R_eco),mean(Rf))
-    volatilidad<-c(sd(Rm), sd(R_bco), sd(R_isa), sd(R_eco),sd(Rf))
-    
-    tabla1<-data.frame(rbind(rendimiento, volatilidad))
-    colnames(tabla1)<-c("R_COLCAP","R_BCO","R_ISA","R_ECO","R_TES")
-    tabla1*100
-    
-    
-    
-    espcartera<-portfolioSpec()
-    
-    setRiskFreeRate(espcartera)<- 0.0003 ##Rentabilidad Activo Libre de Riesgo
-    setNFrontierPoints(espcartera) <- 20
-    
-    Frontera <- portfolioFrontier(as.timeSeries(retornos),spec=espcartera )
-    Frontera
-    
-    
-    ##Graficar frontera eficiente
-    frontierPlot(Frontera)
-    grid()
-    tangencyPoints(Frontera, pch = 19, col = "red", cex=2)
-    tangencyLines(Frontera, col="darkgreen", pch=19, cex=2)
-    minvariancePoints(Frontera, col="blue", pch=19, cex=2)
-    monteCarloPoints(Frontera, col="green", cex=0.001)
-    
-    
-    
-    ##Portafolios
-    efPortfolio <- efficientPortfolio(as.timeSeries(retornos),espcartera)
-    efPortfolio
-    
-    tgPortfolio <- tangencyPortfolio(as.timeSeries(retornos),espcartera)
-    tgPortfolio
-    
-    
-    
-  })
 }
 
 
