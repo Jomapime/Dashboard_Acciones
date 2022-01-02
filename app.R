@@ -272,7 +272,13 @@ ui <- dashboardPage(
                                             selected = "FB",width = "200px",
                                             multiple = F))),
               br(),
-              dataTableOutput("Tablaa"))
+              submitButton("Submit"),
+              br(),
+              dataTableOutput("Tablaa"),
+              br(),
+              plotOutput("Linea_Frontera"),
+              br(),
+              verbatimTextOutput("eficiente"))
       
       
       
@@ -432,8 +438,7 @@ server <- function(input, output) {
     Accion1 <- Arreglos(getSymbols(input$PO_A1, src = "yahoo",
                from = "2019-01-01", periodicity="daily",
                auto.assign = FALSE))
-    Accion1 <- merge(TES,Accion1, by = "rn") 
-  
+
   })
   
   Funcion_P2 <- reactive({
@@ -474,25 +479,153 @@ server <- function(input, output) {
                auto.assign = FALSE))
   })
   
-  Integrar<- reactive({
+  output$Tablaa <- renderDataTable({
+    
     #https://stackoverflow.com/questions/14096814/merging-a-lot-of-data-frames    
     CAPM<- Reduce(function(x, y) merge(x, y, all=TRUE, by = "rn"), 
                   list(Funcion_P1(),Funcion_P2(),Funcion_P3(),Funcion_P4(),Funcion_P5(),
-                       Funcion_P6()))
-    print(CAPM)
+                       Funcion_P6(), TES,GSPC))
+    
+    colnames(CAPM)=c("FECHAS", "ACCION1", "ACCION2","ACCION3", "ACCION4",
+                     "ACCION5", "ACCION6", "BONO","INDICE")
+    CAPM <- na.omit(CAPM)
+    
+    attach(CAPM)
+    ###Definir como series de tiempo
+    ACC1<-ts(ACCION1, frequency = 252, start=c(2019,01,02))
+    ACC2<-ts(ACCION2, frequency = 252, start=c(2019,01,02))
+    ACC3<-ts(ACCION3, frequency = 252, start=c(2019,01,02))
+    ACC4<-ts(ACCION4, frequency = 252, start=c(2019,01,02))
+    ACC5<-ts(ACCION5, frequency = 252, start=c(2019,01,02))
+    ACC6<-ts(ACCION6, frequency = 252, start=c(2019,01,02))
+    I_SP<-ts(INDICE, frequency = 252, start=c(2019,01,02))
+    
+    ##Retornos
+    R_acc1<- diff(log(ACC1))
+    R_acc2<- diff(log(ACC2))
+    R_acc3<- diff(log(ACC3))
+    R_acc4<- diff(log(ACC4))
+    R_acc5<- diff(log(ACC5))
+    R_acc6<- diff(log(ACC6))
+    Rm<-diff(log(I_SP))
+    Rf<-(1+BONO/100)^(1/252)-1
+    Rf<-Rf[!is.na(Rf)]
+    
+    retornos<-cbind(R_acc1,R_acc2,R_acc3,R_acc4,R_acc5,R_acc6)
+    
+    
+    #Rendimiento y volatilidad
+    
+    rendimiento<-c(mean(R_acc1), mean(R_acc2),mean(R_acc3),mean(R_acc4),
+                   mean(R_acc5),mean(R_acc6), mean(Rm), mean(Rf))
+    volatilidad<-c(sd(R_acc1), sd(R_acc2),sd(R_acc3),sd(R_acc4),
+                   sd(R_acc5),sd(R_acc6), sd(Rm), sd(Rf))
+    
+    tabla1<-data.frame(rbind(rendimiento, volatilidad))
+    colnames(tabla1)<-c("Accion 1","Accion 2","Accion 3", "Accion 4",
+                        "Accion 5","Accion 6", "SP 500", "TES")
+    tabla1*100
+    
+    
   })
   
+  output$Linea_Frontera <- renderPlot({
     
-
-  output$Tablaa <- renderDataTable({
+    CAPM<- Reduce(function(x, y) merge(x, y, all=TRUE, by = "rn"), 
+                  list(Funcion_P1(),Funcion_P2(),Funcion_P3(),Funcion_P4(),Funcion_P5(),
+                       Funcion_P6(), TES,GSPC))
     
-
-    Integrar()
+    colnames(CAPM)=c("FECHAS", "ACCION1", "ACCION2","ACCION3", "ACCION4",
+                     "ACCION5", "ACCION6", "BONO","INDICE")
+    CAPM <- na.omit(CAPM)
+    
+    attach(CAPM)
+    ###Definir como series de tiempo
+    ACC1<-ts(ACCION1, frequency = 252, start=c(2019,01,02))
+    ACC2<-ts(ACCION2, frequency = 252, start=c(2019,01,02))
+    ACC3<-ts(ACCION3, frequency = 252, start=c(2019,01,02))
+    ACC4<-ts(ACCION4, frequency = 252, start=c(2019,01,02))
+    ACC5<-ts(ACCION5, frequency = 252, start=c(2019,01,02))
+    ACC6<-ts(ACCION6, frequency = 252, start=c(2019,01,02))
+    I_SP<-ts(INDICE, frequency = 252, start=c(2019,01,02))
+    
+    ##Retornos
+    R_acc1<- diff(log(ACC1))
+    R_acc2<- diff(log(ACC2))
+    R_acc3<- diff(log(ACC3))
+    R_acc4<- diff(log(ACC4))
+    R_acc5<- diff(log(ACC5))
+    R_acc6<- diff(log(ACC6))
+    Rm<-diff(log(I_SP))
+    Rf<-(1+BONO/100)^(1/252)-1
+    Rf<-Rf[!is.na(Rf)]
+    
+    retornos<-cbind(R_acc1,R_acc2,R_acc3,R_acc4,R_acc5,R_acc6)
+    
+    espcartera<-portfolioSpec()
+    
+    setRiskFreeRate(espcartera)<- 0.0003 ##Rendimiento Activo Libre de Riesgo
+    setNFrontierPoints(espcartera) <- 20
+    
+    Frontera <- portfolioFrontier(as.timeSeries(retornos),spec=espcartera )
+    
+    ##Graficar frontera eficiente
+    frontierPlot(Frontera)
+    grid()
+    tangencyPoints(Frontera, pch = 19, col = "red", cex=2)
+    tangencyLines(Frontera, col="darkgreen", pch=19, cex=2)
+    minvariancePoints(Frontera, col="blue", pch=19, cex=2)
+    monteCarloPoints(Frontera, col="green", cex=0.001)
+    
+    
+  })
+    
+  output$eficiente <- renderPrint({
+    CAPM<- Reduce(function(x, y) merge(x, y, all=TRUE, by = "rn"), 
+                  list(Funcion_P1(),Funcion_P2(),Funcion_P3(),Funcion_P4(),Funcion_P5(),
+                       Funcion_P6(), TES,GSPC))
+    
+    colnames(CAPM)=c("FECHAS", "ACCION1", "ACCION2","ACCION3", "ACCION4",
+                     "ACCION5", "ACCION6", "BONO","INDICE")
+    CAPM <- na.omit(CAPM)
+    
+    attach(CAPM)
+    ###Definir como series de tiempo
+    ACC1<-ts(ACCION1, frequency = 252, start=c(2019,01,02))
+    ACC2<-ts(ACCION2, frequency = 252, start=c(2019,01,02))
+    ACC3<-ts(ACCION3, frequency = 252, start=c(2019,01,02))
+    ACC4<-ts(ACCION4, frequency = 252, start=c(2019,01,02))
+    ACC5<-ts(ACCION5, frequency = 252, start=c(2019,01,02))
+    ACC6<-ts(ACCION6, frequency = 252, start=c(2019,01,02))
+    I_SP<-ts(INDICE, frequency = 252, start=c(2019,01,02))
+    
+    ##Retornos
+    R_acc1<- diff(log(ACC1))
+    R_acc2<- diff(log(ACC2))
+    R_acc3<- diff(log(ACC3))
+    R_acc4<- diff(log(ACC4))
+    R_acc5<- diff(log(ACC5))
+    R_acc6<- diff(log(ACC6))
+    Rm<-diff(log(I_SP))
+    Rf<-(1+BONO/100)^(1/252)-1
+    Rf<-Rf[!is.na(Rf)]
+    
+    retornos<-cbind(R_acc1,R_acc2,R_acc3,R_acc4,R_acc5,R_acc6)
+    
+    espcartera<-portfolioSpec()
+    
+    setRiskFreeRate(espcartera)<- 0.0003 ##Rendimiento Activo Libre de Riesgo
+    setNFrontierPoints(espcartera) <- 20
+    
+    ##Portafolios
+    efPortfolio <- efficientPortfolio(as.timeSeries(retornos),espcartera)
+    efPortfolio  
+  })
   
-    })
+  
+
   
 }
-
 
 
 shinyApp(ui = ui, server = server)
