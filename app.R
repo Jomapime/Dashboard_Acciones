@@ -11,7 +11,7 @@ pacman::p_load(shiny,readr,rsconnect,dplyr,highcharter,shinythemes,
 
 L_Acciones = list(NASDAQ = list("AAPL", "TSLA","NVDA","PYPL", "AMD", "MSFT",
                                 "MU", "AMZN", "FB", "NFLX"),
-                  NYSE = list("PLTR", "NIO", "SQ","JPM", "V", "UBER",
+                  NYSE = list("NIO", "SQ","JPM", "V", 
                               "TWTR","KO","NKE","IBM"))
 
 
@@ -117,18 +117,20 @@ PBD_box <-  valueBox(
 
 
 
+
+### PORTAFOLIO OPTIMO
+
 getSymbols("DTP30F40",src="FRED",periodicity="daily")
 
 TES <- as.data.frame(DTP30F40)
 setDT(TES,keep.rownames = T)
 TES$rn <- as.Date(TES$rn, format= "%Y-%m-%d") 
 TES <- subset(TES, rn > "2018-12-31")
+TES$rn <- as.character(TES$rn) 
 
 
 
-
-
-#source("./global.R",encoding = "utf-8")
+ #source("./global.R",encoding = "utf-8")
 
 ## ICONOS
 ### https://getbootstrap.com/docs/3.4/components/#glyphicons
@@ -247,7 +249,7 @@ ui <- dashboardPage(
                        column(2,selectInput("PO_A2",
                                           "Segunda accion",
                                           choices = L_Acciones,
-                                          selected = "UBER",width = "200px",
+                                          selected = "SQ",width = "200px",
                                           multiple = F)),
                        column(2,selectInput("PO_A3",
                                           "Tercera accion",
@@ -427,64 +429,65 @@ server <- function(input, output) {
   ### PRIMERA
   
   Funcion_P1 <- reactive({
-    getSymbols(input$PO_A1, src = "yahoo",
+    Accion1 <- Arreglos(getSymbols(input$PO_A1, src = "yahoo",
                from = "2019-01-01", periodicity="daily",
-               auto.assign = FALSE)
+               auto.assign = FALSE))
+    Accion1 <- merge(TES,Accion1, by = "rn") 
+  
   })
   
   Funcion_P2 <- reactive({
-    getSymbols(input$PO_A2, src = "yahoo",
+    Accion2 <- Arreglos(getSymbols(input$PO_A2, src = "yahoo",
                from = "2019-01-01", periodicity="daily",
-               auto.assign = FALSE)
+               auto.assign = FALSE))
+    
 
   })
   
   Funcion_P3 <- reactive({
-    getSymbols(input$PO_A3, src = "yahoo",
+    Accion3 <- Arreglos(getSymbols(input$PO_A3, src = "yahoo",
                from = "2019-01-01", periodicity="daily",
-               auto.assign = FALSE)
+               auto.assign = FALSE))
 
   })
   
   
   Funcion_P4 <- reactive({
-    getSymbols(input$PO_A4, src = "yahoo",
+    Accion4 <- Arreglos(getSymbols(input$PO_A4, src = "yahoo",
                from = "2019-01-01", periodicity="daily",
-               auto.assign = FALSE)
+               auto.assign = FALSE))
 
   })
   
   
   Funcion_P5 <- reactive({
-    getSymbols(input$PO_A5, src = "yahoo",
+    Accion5 <- Arreglos(getSymbols(input$PO_A5, src = "yahoo",
                from = "2019-01-01", periodicity="daily",
-               auto.assign = FALSE)
+               auto.assign = FALSE))
+    
   })
-  
+    
   
   Funcion_P6 <- reactive({
-    getSymbols(input$PO_A6, src = "yahoo",
+    Accion6 <- Arreglos(getSymbols(input$PO_A6, src = "yahoo",
                from = "2019-01-01", periodicity="daily",
-               auto.assign = FALSE)
+               auto.assign = FALSE))
   })
   
-  base_datos <- reactive({
-    Accion1 <- Arreglos(Funcion_P1)
-    Accion2 <- Arreglos(Funcion_P2)
-    Accion3 <- Arreglos(Funcion_P3)
-    Accion4 <- Arreglos(Funcion_P4)
-    Accion5 <- Arreglos(Funcion_P5)
-    Accion6 <- Arreglos(Funcion_P6)
-    #CAPM<- Reduce(function(x, y) merge(x, y, all=TRUE), list(Accion1,Accion2,Accion3,Accion4,Accion5,Accion6,TES))
-    #CAPM
-    print(Accion1)
+  Integrar<- reactive({
+    #https://stackoverflow.com/questions/14096814/merging-a-lot-of-data-frames    
+    CAPM<- Reduce(function(x, y) merge(x, y, all=TRUE, by = "rn"), 
+                  list(Funcion_P1(),Funcion_P2(),Funcion_P3(),Funcion_P4(),Funcion_P5(),
+                       Funcion_P6()))
+    print(CAPM)
   })
   
+    
+
   output$Tablaa <- renderDataTable({
     
-    #https://stackoverflow.com/questions/14096814/merging-a-lot-of-data-frames
-    Accion1 <- Arreglos(Funcion_P1)
-    print(Accion1)
+
+    Integrar()
   
     })
   
