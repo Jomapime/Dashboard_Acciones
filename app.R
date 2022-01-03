@@ -2,7 +2,7 @@
 #
 
 pacman::p_load(shiny,readr,rsconnect,dplyr,highcharter,shinythemes,
-               shinydashboard,quantmod,
+               shinydashboard,quantmod,fPortfolio,
                data.table,shinyjs, shinyWidgets)
 
 #getSymbols(c("AAPL","TSLA","PYPL","NVDA",
@@ -27,7 +27,7 @@ SP <- getSymbols("^GSPC",src="yahoo",periodicity="daily",
 GSPC <- Arreglos(SP)
 
 SP500 <- GSPC%>%
-  mutate(variacion = (GSPC.Adjusted/lag(GSPC.Adjusted) - 1) * 100)
+  mutate(variacion = ROC(GSPC.Adjusted, type = "discrete") * 100)
 
 Adj_SP <- adjustOHLC(SP)
 Adj_SP.SMA.20 <- SMA(Cl(Adj_SP), n = 20)
@@ -40,10 +40,10 @@ Adj_SP.RSI.BuyLevel <- xts(rep(30, NROW(Adj_SP)), index(Adj_SP))
 ## CAJAS
 
 Negativos <- SP500%>%
-  filter(variacion <= 0.00000)
+  dplyr::filter(variacion <= 0.00000)
 
 Positivos <- SP500%>%
-  filter(variacion > 0.00000)
+  dplyr::filter(variacion > 0.00000)
 
 Primero <- head(SP500,1)
 Ultimo <- tail(SP500,1)
@@ -130,7 +130,7 @@ TES$rn <- as.character(TES$rn)
 
 
 
- #source("./global.R",encoding = "utf-8")
+#source("./global.R",encoding = "utf-8")
 
 ## ICONOS
 ### https://getbootstrap.com/docs/3.4/components/#glyphicons
@@ -242,25 +242,25 @@ ui <- dashboardPage(
               h1("CREACION DE PORTAFOLIO OPTIMO"),
               br(),
               fluidRow(column(2,selectInput("PO_A1",
-                                          "Primera accion",
-                                          choices = L_Acciones,
-                                          selected = "NFLX",width = "200px",
-                                          multiple = F)),
+                                            "Primera accion",
+                                            choices = L_Acciones,
+                                            selected = "NFLX",width = "200px",
+                                            multiple = F)),
                        column(2,selectInput("PO_A2",
-                                          "Segunda accion",
-                                          choices = L_Acciones,
-                                          selected = "SQ",width = "200px",
-                                          multiple = F)),
+                                            "Segunda accion",
+                                            choices = L_Acciones,
+                                            selected = "SQ",width = "200px",
+                                            multiple = F)),
                        column(2,selectInput("PO_A3",
-                                          "Tercera accion",
-                                          choices = L_Acciones,
-                                          selected = "KO",width = "200px",
-                                          multiple = F)),
+                                            "Tercera accion",
+                                            choices = L_Acciones,
+                                            selected = "KO",width = "200px",
+                                            multiple = F)),
                        column(2,selectInput("PO_A4",
-                                          "Cuarta accion",
-                                          choices = L_Acciones,
-                                          selected = "TWTR",width = "200px",
-                                          multiple = F)),
+                                            "Cuarta accion",
+                                            choices = L_Acciones,
+                                            selected = "TWTR",width = "200px",
+                                            multiple = F)),
                        column(2,selectInput("PO_A5",
                                             "Quinta accion",
                                             choices = L_Acciones,
@@ -436,47 +436,47 @@ server <- function(input, output) {
   
   Funcion_P1 <- reactive({
     Accion1 <- Arreglos(getSymbols(input$PO_A1, src = "yahoo",
-               from = "2019-01-01", periodicity="daily",
-               auto.assign = FALSE))
-
+                                   from = "2019-01-01", periodicity="daily",
+                                   auto.assign = FALSE))
+    
   })
   
   Funcion_P2 <- reactive({
     Accion2 <- Arreglos(getSymbols(input$PO_A2, src = "yahoo",
-               from = "2019-01-01", periodicity="daily",
-               auto.assign = FALSE))
+                                   from = "2019-01-01", periodicity="daily",
+                                   auto.assign = FALSE))
     
-
+    
   })
   
   Funcion_P3 <- reactive({
     Accion3 <- Arreglos(getSymbols(input$PO_A3, src = "yahoo",
-               from = "2019-01-01", periodicity="daily",
-               auto.assign = FALSE))
-
+                                   from = "2019-01-01", periodicity="daily",
+                                   auto.assign = FALSE))
+    
   })
   
   
   Funcion_P4 <- reactive({
     Accion4 <- Arreglos(getSymbols(input$PO_A4, src = "yahoo",
-               from = "2019-01-01", periodicity="daily",
-               auto.assign = FALSE))
-
+                                   from = "2019-01-01", periodicity="daily",
+                                   auto.assign = FALSE))
+    
   })
   
   
   Funcion_P5 <- reactive({
     Accion5 <- Arreglos(getSymbols(input$PO_A5, src = "yahoo",
-               from = "2019-01-01", periodicity="daily",
-               auto.assign = FALSE))
+                                   from = "2019-01-01", periodicity="daily",
+                                   auto.assign = FALSE))
     
   })
-    
+  
   
   Funcion_P6 <- reactive({
     Accion6 <- Arreglos(getSymbols(input$PO_A6, src = "yahoo",
-               from = "2019-01-01", periodicity="daily",
-               auto.assign = FALSE))
+                                   from = "2019-01-01", periodicity="daily",
+                                   auto.assign = FALSE))
   })
   
   output$Tablaa <- renderDataTable({
@@ -579,7 +579,7 @@ server <- function(input, output) {
     
     
   })
-    
+  
   output$eficiente <- renderPrint({
     CAPM<- Reduce(function(x, y) merge(x, y, all=TRUE, by = "rn"), 
                   list(Funcion_P1(),Funcion_P2(),Funcion_P3(),Funcion_P4(),Funcion_P5(),
@@ -623,7 +623,7 @@ server <- function(input, output) {
   })
   
   
-
+  
   
 }
 
