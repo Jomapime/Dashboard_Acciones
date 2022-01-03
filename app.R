@@ -5,10 +5,6 @@ pacman::p_load(shiny,readr,rsconnect,dplyr,highcharter,shinythemes,
                shinydashboard,quantmod,fPortfolio,
                data.table,shinyjs, shinyWidgets)
 
-#getSymbols(c("AAPL","TSLA","PYPL","NVDA",
-#             "JPM","SQ","PLTR","NIO","^GSPC"),src="yahoo",periodicity="daily",
-#           auto.assign=T, from = "2017-01-01")
-
 L_Acciones = list(NASDAQ = list("AAPL", "TSLA","NVDA","PYPL", "AMD", "MSFT",
                                 "MU", "AMZN", "FB", "NFLX"),
                   NYSE = list("NIO", "SQ","JPM", "V", 
@@ -235,7 +231,7 @@ ui <- dashboardPage(
                                    width = "200px"),
                     actionButton("go2", "Hacer grafico")),
                 
-                box(width = 8,highchartOutput("Grafico2"))
+                box(width = 8,plotOutput("Grafico2"))
               )),
       
       tabItem(tabName = "P_Optimo",
@@ -271,8 +267,6 @@ ui <- dashboardPage(
                                             choices = L_Acciones,
                                             selected = "FB",width = "200px",
                                             multiple = F))),
-              br(),
-              submitButton("Submit"),
               br(),
               dataTableOutput("Tablaa"),
               br(),
@@ -423,8 +417,8 @@ server <- function(input, output) {
     Descarga_A2()
   })
   
-  output$Grafico2 <- renderHighchart({
-    hchart(Boton2())%>% hc_add_theme(hc_theme_google())
+  output$Grafico2 <- renderPlot({
+    chartSeries(Boton2(),TA="addVo();addBBands()")
   })
   
   
@@ -516,15 +510,19 @@ server <- function(input, output) {
     
     #Rendimiento y volatilidad
     
-    rendimiento<-c(mean(R_acc1), mean(R_acc2),mean(R_acc3),mean(R_acc4),
-                   mean(R_acc5),mean(R_acc6), mean(Rm), mean(Rf))
-    volatilidad<-c(sd(R_acc1), sd(R_acc2),sd(R_acc3),sd(R_acc4),
-                   sd(R_acc5),sd(R_acc6), sd(Rm), sd(Rf))
+    rendimiento<-c("Rendimiento",round(mean(R_acc1)*100,3), round(mean(R_acc2)*100,3),
+                   round(mean(R_acc3)*100,3),round(mean(R_acc4)*100,3), 
+                   round(mean(R_acc5)*100,3),round(mean(R_acc6)*100,3),
+                   round(mean(Rm)*100,3), round(mean(Rf)*100,3))
+    volatilidad<-c("Volatilidad",round(sd(R_acc1)*100,3), round(sd(R_acc2)*100,3),
+                   round(sd(R_acc3)*100,3),round(sd(R_acc4)*100,3), 
+                   round(sd(R_acc5)*100,3),round(sd(R_acc6)*100,3),
+                   round(sd(Rm)*100,3), round(sd(Rf)*100,3))
     
     tabla1<-data.frame(rbind(rendimiento, volatilidad))
-    colnames(tabla1)<-c("Accion 1","Accion 2","Accion 3", "Accion 4",
-                        "Accion 5","Accion 6", "SP 500", "TES")
-    tabla1*100
+    colnames(tabla1)<-c("  ",input$PO_A1,input$PO_A2,input$PO_A3,input$PO_A4,
+                        input$PO_A5,input$PO_A6, "SP 500", "TES")
+    tabla1
     
     
   })
@@ -614,7 +612,7 @@ server <- function(input, output) {
     
     espcartera<-portfolioSpec()
     
-    setRiskFreeRate(espcartera)<- 0.0003 ##Rendimiento Activo Libre de Riesgo
+    setRiskFreeRate(espcartera)<- 0.0000227 ##Rendimiento Activo Libre de Riesgo
     setNFrontierPoints(espcartera) <- 20
     
     ##Portafolios
