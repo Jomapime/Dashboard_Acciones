@@ -5,7 +5,6 @@ pacman::p_load(shiny,readr,rsconnect,dplyr,highcharter,shinythemes,
                shinydashboard,quantmod,fPortfolio,
                data.table,shinyjs, shinyWidgets)
 
-
 L_Acciones = list(NASDAQ = list("AAPL", "TSLA","NVDA","PYPL", "AMD", "MSFT",
                                 "MU", "AMZN", "FB", "NFLX"),
                   NYSE = list("NIO", "SQ","JPM", "V", 
@@ -200,7 +199,11 @@ ui <- dashboardPage(
                                    width = "200px"),
                     actionButton("go", "Hacer grafico")),
                 
-                box(width = 8,plotOutput("Grafico"))
+                tabBox(width = 9,title = "Analisis Accion",
+                       id = "tabset1",
+                       tabPanel("Grafico Accion", plotOutput("Grafico")),
+                       tabPanel("Informacion ultimo dia", verbatimTextOutput("ult_dia")))
+                
               ),
               
               br(),br(),
@@ -218,7 +221,11 @@ ui <- dashboardPage(
                                    width = "200px"),
                     actionButton("go1", "Hacer grafico")),
                 
-                box(width = 8,plotOutput("Grafico1"))
+                
+                tabBox(width = 8,title = "Analisis Accion",
+                       id = "tabset2",
+                       tabPanel("Grafico Accion", plotOutput("Grafico1")),
+                       tabPanel("Informacion ultimo dia", verbatimTextOutput("ult_dia1")))
               ),
               
               br(),br(),
@@ -236,7 +243,11 @@ ui <- dashboardPage(
                                    width = "200px"),
                     actionButton("go2", "Hacer grafico")),
                 
-                box(width = 8,plotOutput("Grafico2"))
+                
+                tabBox(width = 8,title = "Analisis Accion",
+                       id = "tabset1",
+                       tabPanel("Grafico Accion", plotOutput("Grafico2")),
+                       tabPanel("Informacion ultimo dia", verbatimTextOutput("ult_dia2")))
               )),
       
       tabItem(tabName = "P_Optimo",
@@ -402,6 +413,10 @@ server <- function(input, output) {
     chartSeries(Boton())
   })
   
+  output$ult_dia <- renderPrint({
+    tail(Boton(),1)
+  })
+  
   
   ### SEGUNDO GRAFICO
   
@@ -421,6 +436,9 @@ server <- function(input, output) {
     chartSeries(Boton1(),theme="white",TA="addVo();addBBands()")
   })
   
+  output$ult_dia1 <- renderPrint({
+    tail(Boton1(),1)
+  })
   
   ### TERCER GRAFICO
   
@@ -440,7 +458,9 @@ server <- function(input, output) {
     chartSeries(Boton2(),TA="addVo();addBBands()")
   })
   
-  
+  output$ult_dia2 <- renderPrint({
+    tail(Boton2(),1)
+  })
   
   
   ## CREACION DEL PORTAFOLIO OPTIMO
