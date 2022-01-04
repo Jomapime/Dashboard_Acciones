@@ -5,6 +5,7 @@ pacman::p_load(shiny,readr,rsconnect,dplyr,highcharter,shinythemes,
                shinydashboard,quantmod,fPortfolio,
                data.table,shinyjs, shinyWidgets)
 
+
 L_Acciones = list(NASDAQ = list("AAPL", "TSLA","NVDA","PYPL", "AMD", "MSFT",
                                 "MU", "AMZN", "FB", "NFLX"),
                   NYSE = list("NIO", "SQ","JPM", "V", 
@@ -173,6 +174,10 @@ ui <- dashboardPage(
                 inputId = "RSI",
                 label = "Desea agregar el indice de fuerza relativa?", 
                 value = FALSE),
+              awesomeCheckbox(
+                inputId = "MA",
+                label = "Desea agregar las medias moviles de 20 y 200?", 
+                value = FALSE),
               highchartOutput("Graf_SP500", height = 800),
               br(),
               h2("Se Acabo :v")),
@@ -334,29 +339,43 @@ server <- function(input, output) {
   
   output$Graf_SP500 <- renderHighchart({
     
-    if(input$RSI == TRUE){
+    if(input$RSI == TRUE && input$MA == FALSE){
       
+      highchart(type = "stock") %>% 
+        hc_yAxis_multiples(create_yaxis(2, height = c(2,1), turnopposite = T)) %>% 
+        hc_add_series(Adj_SP, yAxis = 0, name = "Adj_SP") %>% 
+        hc_add_series(Adj_SP.RSI.14, yAxis = 1, name = "Osciallator",
+                      color = hex_to_rgba("green", 0.7)) %>%
+        hc_add_series(Adj_SP.RSI.SellLevel, color = hex_to_rgba("red", 0.7),
+                      yAxis = 1, name = "Zona de venta") %>% 
+        hc_add_series(Adj_SP.RSI.BuyLevel, color = hex_to_rgba("blue", 0.7),
+                      yAxis = 1, name = "Zona de compra")
+      
+    }else if (input$RSI == TRUE && input$MA == TRUE){
       highchart(type = "stock") %>% 
         hc_yAxis_multiples(create_yaxis(2, height = c(2,1), turnopposite = T)) %>% 
         hc_add_series(Adj_SP, yAxis = 0, name = "Adj_SP") %>% 
         hc_add_series(Adj_SP.SMA.20, yAxis = 0, name = "Media de 20") %>% 
         hc_add_series(Adj_SP.SMA.200, yAxis = 0, name = "Media de 200") %>% 
-        hc_add_series(Adj_SP.RSI.14, yAxis = 1, name = "Osciallator", color = hex_to_rgba("green", 0.7)) %>%
-        hc_add_series(Adj_SP.RSI.SellLevel, color = hex_to_rgba("red", 0.7), yAxis = 1, name = "Zona de venta") %>% 
-        hc_add_series(Adj_SP.RSI.BuyLevel, color = hex_to_rgba("blue", 0.7), yAxis = 1, name = "Zona de compra")
-    }
-    
-    else if (input$RSI == FALSE){
-      
+        hc_add_series(Adj_SP.RSI.14, yAxis = 1, name = "Osciallator",
+                      color = hex_to_rgba("green", 0.7)) %>%
+        hc_add_series(Adj_SP.RSI.SellLevel, color = hex_to_rgba("red", 0.7),
+                      yAxis = 1, name = "Zona de venta") %>% 
+        hc_add_series(Adj_SP.RSI.BuyLevel, color = hex_to_rgba("blue", 0.7),
+                      yAxis = 1, name = "Zona de compra")
+    }else if(input$RSI == FALSE && input$MA == FALSE){
+      highchart(type = "stock") %>% 
+        hc_add_series(Adj_SP, yAxis = 0, name = "Adj_SP") 
+    }else if(input$RSI == FALSE && input$MA == TRUE){
       highchart(type = "stock") %>% 
         hc_add_series(Adj_SP, yAxis = 0, name = "Adj_SP") %>% 
         hc_add_series(Adj_SP.SMA.20, yAxis = 0, name = "Media de 20") %>% 
-        hc_add_series(Adj_SP.SMA.200, yAxis = 0, name = "Media de 200") 
+        hc_add_series(Adj_SP.SMA.200, yAxis = 0, name = "Media de 200")
+    } 
       #        hc_title(text = "GRAFICO INTERACTIVO COMPORTAMIENTO S&P 500",
       #                 align = "center", style = list(color = "black", fontWeight = "bold", fontSize = "22px"))
       
       
-    }
     
   })
   
