@@ -1,6 +1,9 @@
-Mi segunda página shiny, esta vez la idea será realizar análisis sobre índices de bolsa, series de tiempo de acciones y realizar portafolios optimos con las acciones seleccionadas por el usuario.
 
-Para este proyecto además de shiny utilizaré liberías como flexdashboard y shinydashboard, con el fin de hacer una página mejor estructurada y más intuitiva para la interacción con el usuario.
+Pagina para análisis del mercado accionario de estados unidos. Se emplearon liberías como flexdashboard y shinydashboard, con el fin de hacer una página mejor estructurada y más intuitiva para la interacción con el usuario.
 
+1. Analisis basico del índice S&P500
+2. Seguimiento acciones representativas USA
+3. Creación de portafolio óptimo con acciones representativas de USA.
 
 Enlace: https://jose-pinzon.shinyapps.io/Dashboard_acciones/
+PAGINA AÚN EN CONSTRUCCIÓN.
