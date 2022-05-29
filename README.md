@@ -6,4 +6,5 @@ Pagina para análisis del mercado accionario de estados unidos. Se emplearon lib
 3. Creación de portafolio óptimo con acciones representativas de USA.
 
 Enlace: https://jose-pinzon.shinyapps.io/Dashboard_acciones/
+
 PAGINA AÚN EN CONSTRUCCIÓN.
